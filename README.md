@@ -1,5 +1,7 @@
 # 🕯️ RUMAH ABU-ABU — Horror 3D
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/faizrifadli489-sketch/rumah-abu-abu)
+
 Game horor 3D yang berjalan langsung di browser (desktop & HP). Tanpa aset eksternal —
 semua tekstur, wajah jumpscare, dan suara **dibuat secara prosedural** (Canvas 2D + Web Audio API).
 
@@ -46,4 +48,11 @@ vercel.json  — konfigurasi header & clean URLs
 - **Audio**: detak jantung, drone, bisikan, dan langkah — semua dari `OscillatorNode`/noise buffer.
 - **Performa**: `FogExp2` menggantikan jarak pandang jauh, pixel ratio dibatasi di perangkat sentuh.
 
-Deploy ke Vercel: `vercel --prod`
+Deploy:
+
+- **Paling mudah** — klik tombol *Deploy with Vercel* di atas, atau impor
+  `github.com/faizrifadli489-sketch/rumah-abu-abu` di dashboard Vercel.
+- **Lewat CLI** — `vercel login` lalu jalankan `./deploy.sh`, atau set
+  `VERCEL_TOKEN=xxxx ./deploy.sh` untuk mode non-interaktif.
+
+Vercel mendeteksi ini sebagai situs statis, jadi tidak perlu build step.
