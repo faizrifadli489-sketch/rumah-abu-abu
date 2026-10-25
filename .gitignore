@@ -1,0 +1,12 @@
+# dependensi
+node_modules/
+.vercel/
+
+# berkas sementara / cache
+*.log
+*.tmp
+_chk.mjs
+
+# OS
+.DS_Store
+Thumbs.db
