@@ -10,3 +10,4 @@ _chk.mjs
 # OS
 .DS_Store
 Thumbs.db
+.vercel

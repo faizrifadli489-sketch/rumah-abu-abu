@@ -1,6 +1,7 @@
 // Unit test logika murni (tanpa DOM/WebGL), diambil dari algoritma game.js.
 // Jalankan: node test/logic.test.mjs
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 const CELL = 4, COLS = 8, ROWS = 8;
 const MAP_W = COLS * 2 + 1, MAP_H = ROWS * 2 + 1;
@@ -164,6 +165,20 @@ t('collides: radius pemain mencegah tembus dinding tipis', () => {
   assert.equal(g.collides(c.x, c.z, 0.55), true, 'pemain tidak boleh berada di dinding');
   assert.equal(g.collides(c.x + CELL, c.z, 0.55), false, 'sel sebelah harus bebas');
 });
+
+/* ---- regresi: joystick harus bisa menerima sentuhan ---- */
+const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const js = fs.readFileSync(new URL('../game.js', import.meta.url), 'utf8');
+const cssRule = (sel) => new RegExp(`${sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`).exec(html)?.[1] ?? '';
+const joyCss = cssRule('#joyL,#joyR'), knobCss = cssRule('.knob'), ctlCss = cssRule('#controls');
+
+t('joystick: pointer-events auto (menimpa #controls none)', () => assert.match(joyCss, /pointer-events:\s*auto/));
+t('joystick: touch-action none (tidak ikut scroll)', () => assert.match(joyCss, /touch-action:\s*none/));
+t('joystick: knob tidak mencuri event', () => assert.match(knobCss, /pointer-events:\s*none/));
+t('joystick: kontainer induk tetap pointer-events none', () => assert.match(ctlCss, /pointer-events:\s*none/));
+t('joystick: pakai pointer capture', () => assert.match(js, /setPointerCapture/));
+t('joystick: reset saat jari lepas di luar elemen', () => assert.match(js, /lostpointercapture/));
+t('joystick: di-reset saat startGame', () => assert.match(js, /resetJoy\(\)/));
 
 console.log(`\n${pass}/${pass + fail} lulus`);
 process.exit(fail ? 1 : 0);

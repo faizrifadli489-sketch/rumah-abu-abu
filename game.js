@@ -448,31 +448,47 @@ const joy = {
 function bindJoy(el, knob, side) {
   const R = 52;
   const center = () => { const b = el.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; };
+
+  function setKnob(dx, dy) {
+    knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+  }
+  function reset() {
+    joy[side].id = null; joy[side].x = joy[side].y = 0;
+    setKnob(0, 0);
+  }
+
   el.addEventListener('pointerdown', (e) => {
-    el.setPointerCapture(e.pointerId);
+    e.preventDefault();
     joy[side].id = e.pointerId;
+    try { el.setPointerCapture(e.pointerId); } catch {}
     move(e);
   });
   el.addEventListener('pointermove', (e) => { if (joy[side].id === e.pointerId) move(e); });
-  const end = (e) => {
-    if (joy[side].id !== e.pointerId) return;
-    joy[side].id = null; joy[side].x = joy[side].y = 0;
-    knob.style.transform = 'translate(-50%,-50%)';
-  };
+  const end = (e) => { if (joy[side].id === e.pointerId) reset(); };
   el.addEventListener('pointerup', end);
   el.addEventListener('pointercancel', end);
+  el.addEventListener('lostpointercapture', end);
+  el.addEventListener('contextmenu', (e) => e.preventDefault());
+
   function move(e) {
     const c = center();
     let dx = e.clientX - c.x, dy = e.clientY - c.y;
     const len = Math.hypot(dx, dy) || 1;
     const cl = Math.min(len, R);
     dx = dx / len * cl; dy = dy / len * cl;
-    knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    setKnob(dx, dy);
     joy[side].x = dx / R; joy[side].y = dy / R;
   }
 }
 bindJoy(joyL, knobL, 'L');
 bindJoy(joyR, knobR, 'R');
+function resetJoy() {
+  for (const side of ['L', 'R']) {
+    joy[side].id = null; joy[side].x = joy[side].y = 0;
+  }
+  knobL.style.transform = 'translate(-50%,-50%)';
+  knobR.style.transform = 'translate(-50%,-50%)';
+}
 
 /* ---------- JUMPSCARE ---------- */
 function drawScareFace(t) {
@@ -815,6 +831,7 @@ function startGame() {
   yaw = 0; pitch = 0; paused = false; flicker = 0; stepTimer = 0; damage = 0;
   whisperTimer = 12 + Math.random() * 12; beatTimer = 0;
   foePath = []; foeMode = 'wander'; foeRepath = 0; forgetTimer = 0;
+  resetJoy();
   flashVign.style.display = 'none';
   startOverlay.classList.add('hidden');
   dieOverlay.classList.add('hidden');
