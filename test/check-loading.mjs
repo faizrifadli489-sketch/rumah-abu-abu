@@ -1,0 +1,12 @@
+const PORT = process.argv[2] || '9224';
+const t = await (await fetch(`http://127.0.0.1:${PORT}/json/new?http://127.0.0.1:8099/`, { method: 'PUT' })).json();
+const ws = new WebSocket(t.webSocketDebuggerUrl); await new Promise(r => ws.onopen = r);
+let id = 0; const p = new Map();
+ws.onmessage = e => { const m = JSON.parse(e.data); if (m.id && p.has(m.id)) { p.get(m.id)(m); p.delete(m.id); } };
+const send = (method, params = {}) => new Promise(res => { const n = ++id; p.set(n, m => res(m.result ?? m.error)); ws.send(JSON.stringify({ id: n, method, params })); });
+const ev = async e => (await send('Runtime.evaluate', { expression: e, awaitPromise: true, returnByValue: true }))?.result?.value;
+await send('Runtime.enable'); await new Promise(r => setTimeout(r, 2500));
+console.log('loading:', JSON.stringify(await ev(`(()=>{const l=document.querySelector('#loading');const cs=getComputedStyle(l);return {display:cs.display,hiddenClass:l.classList.contains('hidden'),text:l.textContent.slice(0,70)}})()`)));
+console.log('state:', await ev(`window.__GAME?.state`));
+console.log('glLost:', await ev(`window.__GAME?.ctxLost`));
+ws.close(); process.exit(0);

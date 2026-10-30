@@ -255,6 +255,15 @@ function initRenderer() {
 
 /* ---------- BANGUN DUNIA (tiap mulai game) ---------- */
 function buildWorld() {
+  // dispose scene lama + lepas kamera (kamera berisi senter, dipakai ulang)
+  if (scene) {
+    scene.remove(camera);
+    scene.traverse((o) => {
+      if (o.geometry) o.geometry.dispose();
+      const mats = o.material ? (Array.isArray(o.material) ? o.material : [o.material]) : [];
+      mats.forEach((m) => { if (m.map) m.map.dispose(); m.dispose(); });
+    });
+  }
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000000);
   scene.fog = new THREE.FogExp2(0x000000, 0.075);
@@ -352,7 +361,7 @@ function buildWorld() {
     const pl = new THREE.PointLight(0xffc247, 2.0, 8, 2);
     pl.position.copy(k.position);
     scene.add(k); scene.add(pl);
-    keys3.push({ mesh: k, light: pl, taken: false, i });
+    keys3.push({ mesh: k, light: pl, taken: false, i: keys3.length });
   });
 
   // ---- sosok pengejar ----
@@ -423,7 +432,12 @@ addEventListener('mousemove', (e) => {
   pitch = Math.max(-1.45, Math.min(1.45, pitch));
 });
 function requestLock() {
-  if (!isTouch && renderer.domElement.requestPointerLock) renderer.domElement.requestPointerLock();
+  const el = renderer.domElement;
+  if (!isTouch && el.requestPointerLock) {
+    // Chrome modern mengembalikan Promise; kalau ditolak, jangan sampai unhandled rejection
+    const p = el.requestPointerLock();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  }
 }
 
 /* touch joystick */
@@ -505,6 +519,7 @@ function drawScareFace(t) {
 function triggerJumpscare(cause) {
   if (caught) return;
   caught = true; gameState = 'dead';
+  if (A.droneGain) A.droneGain.gain.value = 0;
   sfxScream();
   jumpscareEl.style.display = 'flex';
   const t0 = performance.now();
@@ -763,8 +778,8 @@ function findPath(fromPos, toPos) {
   const cells = [];
   for (let c = goal; c !== -1; c = prev[c]) cells.push(c);
   cells.reverse();
-  if (cells.length > 1) cells.shift();
   const pts = cells.map((c) => cellToWorld(c % MAP_W, (c / MAP_W) | 0));
+  if (pts.length > 1) pts.shift();
   const out = [];
   for (let i = 0; i < pts.length; i++) {
     if (i === 0 || i === pts.length - 1) { out.push(pts[i]); continue; }
@@ -795,7 +810,6 @@ function startGame() {
 
   // reset
   map = genMaze();
-  while (scene.children.length) scene.remove(scene.children[0]);
   keys3 = []; foeEyes = []; haveKeys = 0; elapsed = 0; distance = 0;
   stamina = 100; battery = 100; flashlightOn = true; danger = 0; caught = false;
   yaw = 0; pitch = 0; paused = false; flicker = 0; stepTimer = 0; damage = 0;
